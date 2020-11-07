@@ -58,15 +58,14 @@ async function get_restaurants_suggestions( preferences_and_loc, limit=5){
     let sum_lat =0.;
     let sum_long = 0.;
     let users = [];
-    let preferences = [];
     for (user of preferences_and_loc){
-        users.push( {
-            "User_ID":user.userId,
-           "Restaurant_ID.Cuisine": user.preference
-        });
-        if (! preferences.includes(user.preference)){
-            preferences.push({ "Restaurant_ID.Cuisine" : user.preference});
+        for (pref of user.preferences){
+            users.push( {
+                "User_ID": user.userId,
+               "Restaurant_ID.Cuisine": pref.preference
+            });
         }
+    
         sum_long+= user.location[0];
         sum_lat+= user.location[1];
     }
