@@ -138,7 +138,7 @@ async function send_feedback( feedback ){
 
     return axios.post("/api/v1/data/interaction", data)
         .then(response => response.data)
-        .catch(err => console.error(response));
+        .catch(err => console.error(err));
 
 }
 

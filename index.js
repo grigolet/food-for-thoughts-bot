@@ -13,13 +13,6 @@ const {get_cuisine_list, get_restaurants_suggestions, send_feedback} = require('
 // const { pollPreferenceScene } = require('./pollPreferenceScene.js')
 
 const constructUsersData = (pollsObject, locationsObject, cuisineList) => {
-    const test = [{
-        chat_id: 21323132,
-        data: {
-            1: [1,2,3,4],
-            2: [1,4,4,3]
-        }
-    }]
     const usersData = pollsObject.data
     let res = []
     _.forOwn(usersData, function(value, key) { 
@@ -134,6 +127,7 @@ bot.on('location', async ctx => {
         console.log('Resturants', restaurants)
         const chosenRestaurantIndex = bot.context.db.chosenRestaurantIndex[chatId] || 0
         bot.context.db.restaurants[chatId] = restaurants.hits
+        bot.context.db.chosenRestaurantIndex[chatId] = chosenRestaurantIndex
         const { Adress, City, Latitude, Longitude, Name, Venue_ID } = bot.context.db.restaurants[chatId][chosenRestaurantIndex]
         bot.context.db.state = 'restaurantChoice'
         bot.telegram.sendVenue(chatId, Latitude, Longitude, Name, Adress, {
@@ -193,16 +187,25 @@ bot.action(/vote_(.)_(.+)_(\d+)/, ctx => {
     bot.context.db.restaurant_votes[chatId] = bot.context.db.restaurant_votes[chatId] || {}
     bot.context.db.restaurant_votes[chatId][foursquare_id] = bot.context.db.restaurant_votes[chatId][foursquare_id] || {}
     bot.context.db.restaurant_votes[chatId][foursquare_id][userId] = reaction
+    if (!(userId in bot.context.db.restaurant_votes[chatId][foursquare_id])) {
+        return
+    }
     console.log(bot.context.db.restaurant_votes[chatId])
     const reactions = Object.values(bot.context.db.restaurant_votes[chatId][foursquare_id])
     const numLikes = reactions.filter(x => x === 'l').length
     const numDislikes = reactions.filter(x => x === 'd').length
     console.log('Reactions: ', reactions, numLikes, numDislikes)
     if (numDislikes >= 1) {
-        bot.context.db.chosenRestaurantIndex[chatId]++
-        const chosenRestaurantIndex = bot.context.db.chosenRestaurantIndex[chatId]
+        let chosenRestaurantIndex = bot.context.db.chosenRestaurantIndex[chatId]
+        chosenRestaurantIndex += 1
+        if  (chosenRestaurantIndex === bot.context.db.restaurants[chatId].length) {
+            bot.telegram.sendMessage(chatId, 'Seems like you can\'t make up your mind. Try /preferences to change your tastes.')
+            return
+        }
+        bot.context.db.chosenRestaurantIndex[chatId] = chosenRestaurantIndex
         console.log('Index: ', chosenRestaurantIndex)
-        const { Adress, City, Latitude, Longitude, Name, Venue_ID } = bot.context.db.restaurants[chosenRestaurantIndex]
+        bot.context.db.chosenRestaurantIndex[chatId]
+        const { Adress, City, Latitude, Longitude, Name, Venue_ID } = bot.context.db.restaurants[chatId][chosenRestaurantIndex]
         bot.context.db.state = 'restaurantChoice'
         bot.telegram.sendVenue(chatId, Latitude, Longitude, Name, Adress, {
             foursquare_id: Venue_ID, 
