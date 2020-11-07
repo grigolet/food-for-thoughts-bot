@@ -113,20 +113,28 @@ async function get_restaurants_suggestions( preferences_and_loc, limit=5){
 
 
 
-async function send_feedback( venue_id, feedback ){
-    // feedback = [
-    //     {userId: Int, feedback : Int},
-    //     {userId: Int, feedback : Int}
-    //     {userId: Int, feedback : Int}
+async function send_feedback( feedback ){
+    // feedback = {
+        // chatId = {
+        //     venue_id:
+        //     {
+        //         user: vote
+        //     }
+        // }
+    // }
   //  /api/v1/data/{table}/batch
     data = [] 
-    for (obj of feedback){
-        f = {
-            "User_ID" : obj.userId ,
-            "Like": obj.feedback,
-            "Restaurant_ID": venue_id
-        };
-        data.push(f);
+    for (chat in  feedback){
+        for (venue in chat){
+            for (user in venue){
+                f = {
+                    "User_ID" : user,
+                    "Like": venue[user],
+                    "Restaurant_ID": venue
+                };
+                data.push(f);
+            }
+        }        
     }
 
     response = await axios.post("/api/v1/data/interaction/batch", data);
