@@ -61,7 +61,7 @@ async function get_restaurants_suggestions( preferences_and_loc, limit=5){
     for (user of preferences_and_loc){
         for (pref of user.preferences){
             users.push( {
-                "User_ID": user.userId,
+                "User_ID": user.user_id,
                "Restaurant_ID.Cuisine": pref.preference
             });
         }
@@ -79,37 +79,36 @@ async function get_restaurants_suggestions( preferences_and_loc, limit=5){
     let max_lng = mean_long + deltaL;
     let min_lng = mean_long - deltaL;
 
-    while(true){
-        query = {
-            "from":  "interaction",
-            "where": {
-                "$on": [
-                    {
-                        // Condizioni loose
-                        "$atomic":{
-                            "$or": users,
-                            //"$or" : preferences
-                        }
-                        
-                    },
-                    { 
-                        //Condizioni tight
-                        "Restaurant_ID.Longitude":{ "$lt": max_lng ,  "$gte": min_lng },
-                        "Restaurant_ID.Latitude":{ "$lt": max_lat ,  "$gte": min_lat },
-                        "Like": 1,
+    query = {
+        "from":  "interaction",
+        "where": {
+            "$on": [
+                {
+                    // Condizioni loose
+                    "$atomic":{
+                        "$or": users,
+                        //"$or" : preferences
                     }
-                ]
-            }, 
-            "match" : "Restaurant_ID",
-            "limit": limit
-        }
-        console.log(util.inspect(query, false, null, true /* enable colors */))
-
-        results = await submit_query('match', query);
-        console.log(util.inspect(results, false, null, true /* enable colors */))
-
-        return results;
+                    
+                },
+                { 
+                    //Condizioni tight
+                    "Restaurant_ID.Longitude":{ "$lt": max_lng ,  "$gte": min_lng },
+                    "Restaurant_ID.Latitude":{ "$lt": max_lat ,  "$gte": min_lat },
+                    "Like": 1,
+                }
+            ]
+        }, 
+        "match" : "Restaurant_ID",
+        "limit": limit
     }
+    console.log(util.inspect(query, false, null, true /* enable colors */))
+
+    results = await submit_query('match', query);
+    console.log(util.inspect(results, false, null, true /* enable colors */))
+
+    return results;
+
 }
 
 
