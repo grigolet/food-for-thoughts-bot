@@ -17,10 +17,32 @@ const TEST = {
     'Japanese', 'Korean', 'Traditional']
 }
 
+const constructUsersData = (pollsObject, locationsObject) => {
+    const test = [{
+        chat_id: 21323132,
+        data: {
+            1: [1,2,3,4],
+            2: [1,4,4,3]
+        }
+    }]
+    const users = Object.keys(pollsObject.data)
+    let res = []
+    _.forOwn(pollsObject.data, function(value, key) { 
+        res.push({
+            user_id: key,
+            preferences: value,
+            location: locationsObject[key]
+        })
+    });
+
+    return res
+}
+
 const bot = new Telegraf(process.env.BOT_TOKEN)
 bot.context.db = {
     polls: {},
-    votes: {}
+    votes: {},
+    locations: {}
 }
 
 const restaurantRequestScene = new Scene('restaurantRequest')
@@ -69,6 +91,7 @@ requestLocationScene.enter(async ctx => {
     const chatId = ctx.chat.id
     console.log('Votes: ', bot.context.db.votes)
     bot.context.db.votes[chatId] = {}
+    bot.context.db.locations[chatId] = {}
     bot.context.db.votes[chatId].remainingUsers = usersIds
     console.log('Users ids for location: ', usersIds)
     ctx.reply('Send your location')
@@ -94,14 +117,19 @@ bot.on('location', async ctx => {
     bot.context.db.votes[chatId].remainingUsers = remainingUsers
     if (remainingUsers.length === 0) {
         // Here I should call a function to send the restaurant list
+        const polls = bot.context.db.polls[chatId]
+        const locations = bot.context.db.locations[chatId]
+        console.log('Locations: ', locations)
+        usersData = constructUsersData(polls, locations)
         bot.context.db.state = 'restaurantChoice'
         bot.telegram.sendVenue(chatId, 46.203199, 6.139999, 'KYtaly', '12 Boulevard George Favon', {foursquare_id: '54402325498e91d43f19d9ad'})
+        ctx.replyWithHTML(`<pre>${JSON.stringify(usersData, null, 2)}</pre>`)
         return
     }
     const message = await ctx.reply(`Thanks! Only ${remainingUsers.length} users left`)
     console.log('Thanks message sent', ctx.message.location)
-    const [latitude, longitude] = [ctx.message.location.latitude, ctx.message.location.longitude]
-    // ctx.scene[userId] = [latitude, longitude]
+    const location = [ctx.message.location.latitude, ctx.message.location.longitude]
+    bot.context.db.locations[chatId] = location
 })
 
 
@@ -109,9 +137,6 @@ const stage = new Stage([pollPreferenceScene, requestLocationScene, restaurantRe
 // bot.use((new LocalSession({ database: 'db.json' })).middleware())
 bot.use(session())
 bot.use(stage.middleware())
-bot.context.db = {
-    polls: []
-}
 
 bot.on('poll_answer', (ctx) => {
     const userId = ctx.pollAnswer.user.id
@@ -143,6 +168,7 @@ bot.action(/stop_poll_(-?\d+)_(-?\d+)/, ctx => {
 bot.start(ctx => {
     bot.context.db.polls = {}
     bot.context.db.votes = {}
+    bot.context.db.locations = {}
     ctx.session.poll = []
     ctx.reply('Welcome message. Use /preferences to choose what to eat')
 })
