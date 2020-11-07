@@ -43,11 +43,12 @@ async function get_cuisine_list(limit=10){
     for (c of result['hits']){
         cuisines.push(c.feature);
     }
+    //console.log(cuisines);
     return cuisines;
 };
 
 
-async function get_restaurants_suggestions( preferences_and_loc ){
+async function get_restaurants_suggestions( preferences_and_loc, limit=5){
     //   preferences_and_loc = [
     //     {userId : Int16Array, preference: Str[], location: [Float,Float]},
     //     {userId : Int16Array, preference: Str[], location: [Float,Float]},
@@ -60,7 +61,8 @@ async function get_restaurants_suggestions( preferences_and_loc ){
     let preferences = [];
     for (user of preferences_and_loc){
         users.push( {
-            "User_ID":user.userId
+            "User_ID":user.userId,
+           "Restaurant_ID.Cuisine": user.preference
         });
         if (! preferences.includes(user.preference)){
             preferences.push({ "Restaurant_ID.Cuisine" : user.preference});
@@ -85,19 +87,22 @@ async function get_restaurants_suggestions( preferences_and_loc ){
                 "$on": [
                     {
                         // Condizioni loose
-                        "Like": 1,
-                        "$or": users,
+                        "$atomic":{
+                            "$or": users,
+                            //"$or" : preferences
+                        }
+                        
                     },
                     { 
                         //Condizioni tight
                         "Restaurant_ID.Longitude":{ "$lt": max_lng ,  "$gte": min_lng },
                         "Restaurant_ID.Latitude":{ "$lt": max_lat ,  "$gte": min_lat },
-                        "$or" : preferences
+                        "Like": 1,
                     }
                 ]
             }, 
             "match" : "Restaurant_ID",
-            "limit":3
+            "limit": limit
         }
         console.log(util.inspect(query, false, null, true /* enable colors */))
 
@@ -139,12 +144,16 @@ module.exports = {
 
 
 
-//get_cuisine_list(30);
-get_restaurants_suggestions( [
-        {"userId" : "u1", "preference": "Italian" , "location":[6.136118, 46.188817]},
-        {"userId" : "u2", "preference": "Japanese" , "location":[6.134118, 46.186817]}
-    ] 
-)
+// //"preference": "Asian" ,
+// get_cuisine_list(30);
+// get_restaurants_suggestions( [
+//         {"userId" : "u3", "preference": "Swiss", "location":[6.114837, 46.217126]},//
+//         {"userId" : "u4", "preference": "Fast Food", "location":[6.168395, 46.20]},
+        // {"userId" : "u5", "location":[6.136118, 46.188817]},
+        // {"userId" : "u3", "location":[6.136118, 46.188817]},
+      //  {"userId" : "u5", "preference": "Japanese" , "location":[6.134118, 46.186817]}
+//     ] 
+// )
 
 
 //
