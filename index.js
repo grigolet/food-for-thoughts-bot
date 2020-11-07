@@ -71,6 +71,7 @@ pollPreferenceScene.enter(async (ctx) => {
     } catch (error) {
         console.log(error)
     }
+    ctx.reply('Click on stop poll when you\'re done choosing')
     ctx.scene.leave()
 })
 
@@ -90,7 +91,7 @@ requestLocationScene.enter(async ctx => {
     bot.context.db.locations[chatId] = {}
     bot.context.db.votes[chatId].remainingUsers = usersIds
     console.log('Users ids for location: ', usersIds)
-    ctx.reply('Send your location')
+    ctx.reply('Send your location 📌')
     bot.context.db.scene = 'requestLocation'
     ctx.scene.leave()
 })
@@ -130,6 +131,7 @@ bot.on('location', async ctx => {
         bot.context.db.chosenRestaurantIndex[chatId] = chosenRestaurantIndex
         const { Adress, City, Latitude, Longitude, Name, Venue_ID } = bot.context.db.restaurants[chatId][chosenRestaurantIndex]
         bot.context.db.state = 'restaurantChoice'
+        bot.telegram.sendMessage(chatId, "Here's what I found for you all. What do you think?")
         bot.telegram.sendVenue(chatId, Latitude, Longitude, Name, Adress, {
             foursquare_id: Venue_ID, 
             reply_markup: JSON.stringify({
@@ -140,7 +142,7 @@ bot.on('location', async ctx => {
         )
         return
     }
-    await ctx.reply(`Thanks! Only ${remainingUsers.length} users left`)
+    await ctx.reply(`Thanks! Waiting for ${remainingUsers.length} users to send their location`)
     console.log('Thanks message sent', ctx.message.location)
 })
 
@@ -199,7 +201,7 @@ bot.action(/vote_(.)_(.+)_(\d+)/, ctx => {
         let chosenRestaurantIndex = bot.context.db.chosenRestaurantIndex[chatId]
         chosenRestaurantIndex += 1
         if  (chosenRestaurantIndex === bot.context.db.restaurants[chatId].length) {
-            bot.telegram.sendMessage(chatId, 'Seems like you can\'t make up your mind. Try /preferences to change your tastes.')
+            bot.telegram.sendMessage(chatId, 'Seems like you can\'t make up your mind 🤯 Try to /eat again 🥙')
             return
         }
         bot.context.db.chosenRestaurantIndex[chatId] = chosenRestaurantIndex
@@ -207,6 +209,7 @@ bot.action(/vote_(.)_(.+)_(\d+)/, ctx => {
         bot.context.db.chosenRestaurantIndex[chatId]
         const { Adress, City, Latitude, Longitude, Name, Venue_ID } = bot.context.db.restaurants[chatId][chosenRestaurantIndex]
         bot.context.db.state = 'restaurantChoice'
+        bot.telegram.sendMessage(chatId, 'What about this place instead?')
         bot.telegram.sendVenue(chatId, Latitude, Longitude, Name, Adress, {
             foursquare_id: Venue_ID, 
             reply_markup: JSON.stringify({
@@ -216,17 +219,10 @@ bot.action(/vote_(.)_(.+)_(\d+)/, ctx => {
             ]] } ) }
         )
     }
-    /*
-    restaurant_votes = {
-        14019109: { <- chat ID
-            13efewfwefk2n32: { <- Venue ID
-                -124141: 'l', // userID: reaction
-                124441431: 'd',
-
-            }
-        }
+    if (numLikes === ctx.getChatMembersCount() - 1) {
+        bot.telegram.sendMessage("Glad you liked this place! 🔝")
     }
-    */
+
     send_feedback(bot.context.db.restaurant_votes[chatId])
     ctx.editMessageReplyMarkup({
         inline_keyboard: [[
@@ -243,9 +239,9 @@ bot.start(ctx => {
     bot.context.db.locations = {}
     bot.context.db.restaurant_votes = {}
     ctx.session.poll = []
-    ctx.reply('Welcome message. Use /preferences to choose what to eat')
+    ctx.reply('Let me help you find a place 🙂. Start by using /eat')
 })
 
-bot.command('preferences', async (ctx) => await ctx.scene.enter('pollPreference'))
+bot.command('eat', async (ctx) => await ctx.scene.enter('pollPreference'))
 bot.launch()
 
