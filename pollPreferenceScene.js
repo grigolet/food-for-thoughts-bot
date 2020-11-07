@@ -8,23 +8,26 @@ const TEST = {
 }
 
 const pollPreferenceScene = new Scene('pollPreference')
-pollPreferenceScene.enter((ctx) => {
-    ctx.replyWithPoll(
+pollPreferenceScene.enter(async (ctx) => {
+    const pollMessage = await ctx.replyWithPoll(
         'What are your food preferences',
         TEST.preferences.slice(0, 10),
         {is_anonymous: false, allows_multiple_answers: true,
         reply_markup: JSON.stringify({
             inline_keyboard: [[
-                {text: 'Stop poll', callback_data: 'stop_poll'}
+                // Guess that the poll message id will be the next after the one received
+                {text: 'Stop poll', callback_data: `stop_poll_${ctx.chat.id}_${ctx.message.message_id+1}`}
             ]]
         })})
+    console.log('Poll id: ', pollMessage)
     try {
-        ctx.session.poll = [...ctx.session.poll, {
-            chat_id: ctx.chat.id,
-            message_id: ctx.message.message_id
-        }]
+        const poll = ctx.session.poll || {}
+        poll[pollMessage.id] = {
+            data: {}
+        }
+        ctx.session.poll = poll
     } catch (error) {
-        console.error(error)
+        console.log(error)
     }
     
     console.log('New poll', ctx.session)
@@ -33,6 +36,7 @@ pollPreferenceScene.enter((ctx) => {
 pollPreferenceScene.action(/stop_poll/, ctx => {
     console.log('answer', ctx.pollAnswer)
     ctx.stopPoll()
+    ctx.scene.enter('locationRequestScene')
 })
 
 
