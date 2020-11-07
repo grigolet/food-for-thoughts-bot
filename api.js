@@ -66,8 +66,8 @@ async function get_restaurants_suggestions( preferences_and_loc, limit=5){
             });
         }
     
-        sum_long+= user.location[0];
-        sum_lat+= user.location[1];
+        sum_long+= user.location[1];
+        sum_lat+= user.location[0];
     }
     let mean_lat = sum_lat / preferences_and_loc.length;
     let mean_long = sum_long / preferences_and_loc.length;
