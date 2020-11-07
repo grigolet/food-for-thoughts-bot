@@ -118,27 +118,27 @@ async function send_feedback( feedback ){
         // chatId = {
         //     venue_id:
         //     {
-        //         user: vote
+        //         user: "l"
         //     }
         // }
     // }
   //  /api/v1/data/{table}/batch
-    data = [] 
-    for (chat in  feedback){
-        for (venue in chat){
-            for (user in venue){
-                f = {
-                    "User_ID" : user,
-                    "Like": venue[user],
-                    "Restaurant_ID": venue
-                };
-                data.push(f);
-            }
-        }        
-    }
+    let data;
+    for (venue in feedback){
+        for (user in venue){
+            let like = false;
+            if (venue[user] == "l") like=true;
+            data = {
+                "User_ID" : user,
+                "Like": like,
+                "Restaurant_ID": venue
+            };
+        }
+    }        
 
-    response = await axios.post("/api/v1/data/interaction/batch", data);
-    return response
+    return axios.post("/api/v1/data/interaction", data)
+        .then(response => response.data)
+        .catch(err => console.error(response));
 
 }
 
