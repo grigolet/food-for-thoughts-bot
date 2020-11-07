@@ -41,7 +41,6 @@ bot.context.db = {
 
 const restaurantRequestScene = new Scene('restaurantRequest')
 restaurantRequestScene.enter(ctx => {
-    // Here I should query and receive a suggestion
     ctx.reply(JSON.stringify(ctx.scene.state, null, 2))
 })
 
