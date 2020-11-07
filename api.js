@@ -58,11 +58,11 @@ async function get_restaurants_suggestions( preferences_and_loc, limit=5){
     let sum_lat =0.;
     let sum_long = 0.;
     let users = [];
+    let cuisines = [];
     for (user of preferences_and_loc){
         for (pref of user.preferences){
-            users.push( {
-                "User_ID": user.user_id,
-               "Restaurant_ID.Cuisine": pref.preference
+            cuisines.push( {
+                "Restaurant_ID.Cuisine": pref
             });
         }
     
@@ -72,7 +72,7 @@ async function get_restaurants_suggestions( preferences_and_loc, limit=5){
     let mean_lat = sum_lat / preferences_and_loc.length;
     let mean_long = sum_long / preferences_and_loc.length;
 
-    const deltaL = 0.05
+    const deltaL = 0.1
 
     let max_lat = mean_lat + deltaL;
     let min_lat = mean_lat - deltaL;
@@ -81,30 +81,24 @@ async function get_restaurants_suggestions( preferences_and_loc, limit=5){
 
     query = {
         "from":  "interaction",
-        "where": {
-            "$on": [
-                {
-                    // Condizioni loose
-                    "$atomic":{
-                        "$or": users,
-                        //"$or" : preferences
-                    }
-                    
-                },
+        "where": 
                 { 
                     //Condizioni tight
-                    "Restaurant_ID.Longitude":{ "$lt": max_lng ,  "$gte": min_lng },
-                    "Restaurant_ID.Latitude":{ "$lt": max_lat ,  "$gte": min_lat },
-                    "Like": 1,
-                }
-            ]
-        }, 
-        "match" : "Restaurant_ID",
+                    // "Restaurant_ID.Longitude":{ "$lt": max_lng ,  "$gte": min_lng },
+                    // "Restaurant_ID.Latitude":{ "$lt": max_lat ,  "$gte": min_lat },
+                    "$atomic": { 
+                        "$or": cuisines
+                        }
+                    
+                },
+            
+        "goal":{"Like":1},
+        "recommend" : "Restaurant_ID",
         "limit": limit
     }
     console.log(util.inspect(query, false, null, true /* enable colors */))
 
-    results = await submit_query('match', query);
+    results = await submit_query('recommend', query);
     console.log(util.inspect(results, false, null, true /* enable colors */))
 
     return results;
@@ -138,7 +132,7 @@ async function send_feedback( feedback ){
 
     return axios.post("/api/v1/data/interaction", data)
         .then(response => response.data)
-        .catch(err => console.error(response));
+        .catch(err =>console.error(err))
 
 }
 
@@ -151,13 +145,11 @@ module.exports = {
 
 
 // //"preference": "Asian" ,
-// get_cuisine_list(30);
+// // get_cuisine_list(30);
 // get_restaurants_suggestions( [
-//         {"userId" : "u3", "preference": "Swiss", "location":[6.114837, 46.217126]},//
-//         {"userId" : "u4", "preference": "Fast Food", "location":[6.168395, 46.20]},
-        // {"userId" : "u5", "location":[6.136118, 46.188817]},
-        // {"userId" : "u3", "location":[6.136118, 46.188817]},
-      //  {"userId" : "u5", "preference": "Japanese" , "location":[6.134118, 46.186817]}
+//         {"userId" : "u3", "preferences": ["Swiss"], "location":[6.114837, 46.217126]},//
+//         {"userId" : "u4", "preferences": ["Fast Food"], "location":[6.168395, 46.20]},
+      
 //     ] 
 // )
 
