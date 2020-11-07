@@ -31,6 +31,7 @@ pollPreferenceScene.enter(async (ctx) => {
     }
     
     console.log('New poll', ctx.session)
+    ctx.reply('Click on stop poll when you\'re done choosing')
     ctx.scene.leave()
 })
 pollPreferenceScene.action(/stop_poll/, ctx => {
