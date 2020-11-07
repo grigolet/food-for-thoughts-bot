@@ -178,7 +178,7 @@ bot.action(/stop_poll_(-?\d+)_(-?\d+)/, ctx => {
     ctx.scene.enter('requestLocation', ctx.scene.state)
 })
 
-bot.action(/vote_(.)_(.+)_(\d+)/, ctx => {
+bot.action(/vote_(.)_(.+)_(\d+)/, async ctx => {
     console.log('CB query text', ctx.text)
     const chatId = ctx.chat.id
     console.log('CB query chat', ctx.chat)
@@ -201,6 +201,13 @@ bot.action(/vote_(.)_(.+)_(\d+)/, ctx => {
         chosenRestaurantIndex += 1
         if  (chosenRestaurantIndex === bot.context.db.restaurants[chatId].length) {
             bot.telegram.sendMessage(chatId, 'Seems like you can\'t make up your mind 🤯 Try to /eat again 🥙')
+            bot.context.db.chosenRestaurantIndex[chatId]
+            const polls = bot.context.db.polls[chatId]
+            const locations = bot.context.db.locations[chatId]
+            const cuisineList = bot.context.db.cuisineList[chatId]
+            console.log('Locations: ', locations)
+            usersData = constructUsersData(polls, locations, cuisineList)
+            bot.context.db.restaurants[chatId] = await get_restaurants_suggestions(usersData)
             return
         }
         bot.context.db.chosenRestaurantIndex[chatId] = chosenRestaurantIndex

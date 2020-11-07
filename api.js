@@ -1,8 +1,10 @@
+require('dotenv').config()
 const axios = require('axios');
 const util = require('util');
 
-axios.defaults.baseURL = "https://fft.aito.app";
-axios.defaults.headers.common['x-api-key'] = 'jQYVvchC526H9iAFHL5f76VDpbf5yCEXSVEIcqra';
+
+axios.defaults.baseURL = process.env.AITO_API_INSTANCE;
+axios.defaults.headers.common['x-api-key'] = process.env.AITO_API_KEY;
 axios.defaults.headers.common['content-type'] = 'application/json';
 
 
